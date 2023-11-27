@@ -34,6 +34,7 @@ public class TerrainGenerator : MonoBehaviour
         public string name;
         public float minHeight;
         public float maxHeight;
+        public int heightModifier;
         public Color color;
     }
 
@@ -52,6 +53,7 @@ public class TerrainGenerator : MonoBehaviour
             meshRenderer = gameObject.AddComponent<MeshRenderer>();  // Add MeshRenderer component if not already present
         }
 
+
         GenerateTerrain();
     }
 
@@ -59,18 +61,18 @@ public class TerrainGenerator : MonoBehaviour
     {
         terrainMesh = CreateTerrainMesh();
         meshFilter.mesh = terrainMesh;
-        colors = new Color[terrainMesh.vertices.Length];
 
-        // Iterate through the biome array
-        for (int i = 0; i < biomes.Length; i++)
+        // if the mesh filter doesn't have a mesh...
+        if (meshFilter.mesh == null)
         {
-            // If the height of the terrain is between the min and max height of the biome
-            if (terrainMesh.vertices[i].y >= biomes[i].minHeight && terrainMesh.vertices[i].y <= biomes[i].maxHeight)
-            {
-                // Set the color of the terrain to the color of the biome
-                meshRenderer.material.color = biomes[i].color;
-            }
+            Debug.Log("Mesh filter doesn't have a mesh");
         }
+
+        // Create a texture to store the colours
+        Texture2D texture = new Texture2D(width, height);
+
+        Debug.Log(terrainMesh.vertices.Length);
+
     }
 
     Mesh CreateTerrainMesh()
@@ -85,7 +87,9 @@ public class TerrainGenerator : MonoBehaviour
         {
             for (int x = 0; x <= width; x++)
             {
-                float heightValue = Mathf.InverseLerp(0f, 1f, Mathf.PerlinNoise((x + offsetX) / scale, (y + offsetY) / scale));
+                float heightValue = Mathf.PerlinNoise((x + offsetX) / scale, (y + offsetY) / scale);
+                Debug.Log("Height value: " + heightValue);
+
                 vertices[vertexIndex] = new Vector3(x, heightValue, y);
 
                 if (x < width && y < height)
