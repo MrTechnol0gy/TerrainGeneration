@@ -14,42 +14,53 @@ public class TerrainGeneration : MonoBehaviour
     public int terrainHeight;
 
     Mesh mesh;
-    Vector3[] vertices;
-    int[] triangles;
+    List<Vector3> vertices;
+    List<int> triangles;
 
     // Start is called before the first frame update
     void Start()
     {
         mesh = new Mesh();
         GetComponent<MeshFilter>().mesh = mesh;
+        // Initialize lists
+        vertices = new List<Vector3>();
+        triangles = new List<int>();
 
-        CreateShape();
+        CreateMesh();
         UpdateMesh();
     }
 
-    void CreateShape()
+    void CreateMesh()
     {
-        vertices = new Vector3[]
+        for (int i = 0; i < terrainWidth; i++)
         {
-            new Vector3(0, 0, 0),           // Bottom left
-            new Vector3(0, 0, faceWidth),       // Top left
-            new Vector3(faceHeight, 0, 0),      // Bottom right
-            new Vector3(faceHeight, 0, faceWidth)   // Top right
-        };
-        
-        triangles = new int[]
-        {
-            0, 1, 2,    // First triangle
-            2, 1, 3     // Second triangle
-        };
+            for (int j = 0; j < terrainHeight; j++)
+            {
+                // create vertices for each face
+                vertices.Add(new Vector3(i * faceWidth, j * faceHeight, 0));
+                vertices.Add(new Vector3(i * faceWidth, j * faceHeight + faceHeight, 0));
+                vertices.Add(new Vector3(i * faceWidth + faceWidth, j * faceHeight + faceHeight, 0));
+                vertices.Add(new Vector3(i * faceWidth + faceWidth, j * faceHeight, 0));
+
+                // create triangles for each face; six vertices per face, two overlapping triangles
+                triangles.Add((i * j) + 0);
+                triangles.Add((i * j) + 1);
+                triangles.Add((i * j) + 2);
+                triangles.Add((i * j) + 0);
+                triangles.Add((i * j) + 2);
+                triangles.Add((i * j) + 3);
+            }
+        }
     }
 
     void UpdateMesh()
     {
         mesh.Clear();
+        mesh.vertices = vertices.ToArray();
+        mesh.triangles = triangles.ToArray();
+        mesh.Optimize();                        // Copilot recommended this and it can't possibly be this easy...        
 
-        mesh.vertices = vertices;
-        mesh.triangles = triangles;
+        mesh.RecalculateNormals();
     }
     
 }
