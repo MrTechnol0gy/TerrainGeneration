@@ -357,8 +357,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   faceWidth: 1
   faceHeight: 1
-  terrainWidth: 5
-  terrainHeight: 5
+  terrainWidth: 32
+  terrainHeight: 32
 --- !u!23 &1925752582
 MeshRenderer:
   m_ObjectHideFlags: 0
