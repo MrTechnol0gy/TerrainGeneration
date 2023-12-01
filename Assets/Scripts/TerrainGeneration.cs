@@ -5,18 +5,18 @@ using UnityEngine;
 [RequireComponent(typeof(MeshFilter))]                  // Require MeshFilter component
 public class TerrainGeneration : MonoBehaviour
 {
-    [Header("Face Size")]
-    public int faceWidth;
-    public int faceHeight;
-
     [Header("Terrain Size")]
     public int terrainWidth;
     public int terrainHeight;
-    private float heightValue;
+
+    [Header("Height Variables")]
+    public float scale;
+    public float multiplier;
 
     Mesh mesh;
     List<Vector3> vertices;
     List<int> triangles;
+    List<float> heightMap;
 
     // Start is called before the first frame update
     void Start()
@@ -26,48 +26,51 @@ public class TerrainGeneration : MonoBehaviour
         // Initialize lists
         vertices = new List<Vector3>();
         triangles = new List<int>();
+        heightMap = new List<float>();
 
         CreateMesh();
-        AdjustHeight();
+        // GenerateHeightMap(terrainWidth, terrainHeight, scale, multiplier);
         UpdateMesh();
     }
 
     void CreateMesh()
     {
-        for (int i = 0; i < terrainWidth; i++)
+        for (int x = 0; x < terrainWidth; x++)
         {
-            for (int j = 0; j < terrainHeight; j++)
+            for (int z = 0; z < terrainHeight; z++)
             {
-                heightValue = RealPerlinNoise(Mathf.PerlinNoise(i + 0.1f, j + 0.1f));
-                Debug.Log(heightValue);
                 // create vertices for each face
-                // 0,0 is bottom left corner
-                // 0,1 is top left corner
-                // 1,1 is top right corner
-                // 1,0 is bottom right corner
+                float y = 0f;
+                Vector3 vertex = new Vector3(x, y, z);
+                vertices.Add(vertex);
+            }
+        }
 
-                vertices.Add(new Vector3(i * faceWidth, 0, j * faceHeight));
-                vertices.Add(new Vector3(i * faceWidth, 0, j * faceHeight + faceHeight));
-                vertices.Add(new Vector3(i * faceWidth + faceWidth, 0, j * faceHeight + faceHeight));
-                vertices.Add(new Vector3(i * faceWidth + faceWidth, 0, j * faceHeight));
-
-                // create triangles for each face; six vertices per face, two overlapping triangles
+        // create triangles for each face
+        for (int x = 0; x < terrainWidth - 1; x++)
+        {
+            for (int z = 0; z < terrainHeight - 1; z++)
+            {
+                // Six vertices per face, two overlapping triangles
                 // 0,1,2 and 0,2,3
                 // The first triangle is the bottom left, top left, top right
                 // The second triangle is the bottom left, top right, bottom right
-                // In this case, the triangles are counter-clockwise, so the normal is pointing up
-                // The 4 * i * terrainHeight is to account for the previous faces
-                // The 4 * j is to account for the previous vertices in the current face
                 // The 0,1,2 and 0,2,3 are the indices of the vertices in the vertices list
 
-                // The first triangle:
-                triangles.Add(0 + 4 * i * terrainHeight + 4 * j);
-                triangles.Add(1 + 4 * i * terrainHeight + 4 * j);
-                triangles.Add(2 + 4 * i * terrainHeight + 4 * j);
-                // The second triangle:
-                triangles.Add(0 + 4 * i * terrainHeight + 4 * j);
-                triangles.Add(2 + 4 * i * terrainHeight + 4 * j);
-                triangles.Add(3 + 4 * i * terrainHeight + 4 * j);
+                int topLeft = x + z * terrainWidth;
+                int topRight = (x + 1) + z * terrainWidth;
+                int bottomLeft = x + (z + 1) * terrainWidth;
+                int bottomRight = (x + 1) + (z + 1) * terrainWidth;
+
+                // First triangle
+                triangles.Add(topLeft);
+                triangles.Add(topRight);
+                triangles.Add(bottomLeft);
+
+                // Second triangle
+                triangles.Add(topRight);
+                triangles.Add(bottomRight);
+                triangles.Add(bottomLeft);
             }
         }
     }
@@ -87,19 +90,24 @@ public class TerrainGeneration : MonoBehaviour
         return value;
     }
 
-    void AdjustHeight()
+    List<float> GenerateHeightMap(int width, int height, float scale, float multiplier)
     {
-        // Access and modify the height values of the vertices
-        for (int i = 0; i < vertices.Count; i++)
+        List<float> heightMap = new List<float>();
+        for (int x = 0; x < width; x++)
         {
-            // Access a specific vertex
-            Vector3 vertex = vertices[i];
+            for (int z = 0; z < height; z++)
+            {
+                float xCoord = (float)x / width * scale;
+                float zCoord = (float)z / height * scale;
 
-            // Modify the height value
-            vertex.y = RealPerlinNoise(Mathf.PerlinNoise(vertex.x, vertex.z));
-
-            // Assign the modified vertex back to the list
-            vertices[i] = vertex;
+                float y = Mathf.PerlinNoise(xCoord, zCoord);
+                y = RealPerlinNoise(y);
+                y *= multiplier;
+                heightMap.Add(y);
+            }
         }
+        return heightMap;
     }
+
+
 }
