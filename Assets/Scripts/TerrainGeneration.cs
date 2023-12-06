@@ -26,11 +26,24 @@ public class TerrainGeneration : MonoBehaviour
         // Initialize lists
         vertices = new List<Vector3>();
         triangles = new List<int>();
-        heightMap = new List<float>();
 
+        // Create mesh, which is flat
         CreateMesh();
-        // GenerateHeightMap(terrainWidth, terrainHeight, scale, multiplier);
+        // Generate heightmap
+        heightMap = GenerateHeightMap(terrainWidth, terrainHeight, scale, multiplier);
+        // Apply heightmap to vertices
+        ApplyHeightmap(heightMap, terrainWidth, terrainHeight, vertices);
+        // Update mesh with all changes
         UpdateMesh();
+    }
+
+    void Update()
+    {
+        // If player presses escape, quit the game
+        if (Input.GetKeyDown(KeyCode.Escape))
+        {
+            Application.Quit();
+        }
     }
 
     void CreateMesh()
@@ -39,7 +52,9 @@ public class TerrainGeneration : MonoBehaviour
         {
             for (int z = 0; z < terrainHeight; z++)
             {
-                // create vertices for each face
+                // Create a vertex at each point in the grid
+                // The x and z coordinates are the same as the loop
+                // The y coordinate is 0; will be modified later
                 float y = 0f;
                 Vector3 vertex = new Vector3(x, y, z);
                 vertices.Add(vertex);
@@ -83,6 +98,23 @@ public class TerrainGeneration : MonoBehaviour
         
         mesh.RecalculateNormals();
     }
+
+    void ApplyHeightmap(List<float> heightmap, int width, int length, List<Vector3> vertices) 
+    {
+        for (int x = 0; x < width; x++) 
+        {
+            for (int z = 0; z < length; z++) 
+            {
+                // Get the index of the vertex in the vertices list
+                int index = x + z * width;
+                Vector3 vertex = vertices[index];
+                // Change the y coordinate of the vertex to the heightmap value
+                vertex.y = heightmap[index];
+                // Update the vertex in the vertices list
+                vertices[index] = vertex;
+            }
+        }
+    }
     
     float RealPerlinNoise(float value)
     {
@@ -92,22 +124,24 @@ public class TerrainGeneration : MonoBehaviour
 
     List<float> GenerateHeightMap(int width, int height, float scale, float multiplier)
     {
-        List<float> heightMap = new List<float>();
+        heightMap = new List<float>();
         for (int x = 0; x < width; x++)
         {
             for (int z = 0; z < height; z++)
             {
+                // Perlin noise is a value between 0 and 1 in Unity, which is wrong
                 float xCoord = (float)x / width * scale;
                 float zCoord = (float)z / height * scale;
 
+                // 
                 float y = Mathf.PerlinNoise(xCoord, zCoord);
+                // y = y * 2 - 1 wrapper, to fix Unity's Perlin noise
                 y = RealPerlinNoise(y);
                 y *= multiplier;
+                // Add the y value to the heightmap list
                 heightMap.Add(y);
             }
         }
         return heightMap;
     }
-
-
 }
